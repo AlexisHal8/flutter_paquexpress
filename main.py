@@ -15,7 +15,7 @@ from sqlalchemy.orm import sessionmaker, Session, declarative_base, relationship
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 
-# --- CONFIGURACIÓN ---
+
 DATABASE_URL = "mysql+pymysql://root:@localhost/paquexpress_db" 
 SECRET_KEY = "tu_clave_secreta_super_segura"
 ALGORITHM = "HS256"

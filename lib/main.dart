@@ -7,21 +7,18 @@ import 'package:geolocator/geolocator.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-// --- CONFIGURACIÓN GLOBAL ---
-// CAMBIA ESTO: Usa 'http://10.0.2.2:8000' para Emulador Android
-// Usa 'http://127.0.0.1:8000' para iOS Simulator o Web
-// Usa tu IP local (ej 'http://192.168.1.50:8000') para celular físico
+
 const String BASE_URL = 'http://127.0.0.1:8000'; 
 
 void main() {
   runApp(const PaquexpressApp());
 }
 
-// --- TEMA Y COLORES (Estilo Amazon) ---
+
 class AppColors {
-  static const Color primary = Color(0xFF232F3E); // Gris Oscuro Amazon
-  static const Color secondary = Color(0xFFFF9900); // Naranja Amazon
-  static const Color background = Color(0xFFEAEDED); // Gris Claro Fondo
+  static const Color primary = Color(0xFF232F3E); 
+  static const Color secondary = Color(0xFFFF9900); 
+  static const Color background = Color(0xFFEAEDED); 
   static const Color text = Color(0xFF111111);
 }
 
@@ -43,7 +40,7 @@ class PaquexpressApp extends StatelessWidget {
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.secondary,
-            foregroundColor: Colors.black, // Texto negro en botón naranja
+            foregroundColor: Colors.black, 
             textStyle: const TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
@@ -54,28 +51,26 @@ class PaquexpressApp extends StatelessWidget {
   }
 }
 
-// --- SERVICIO DE API ---
+
 class ApiService {
   final Dio _dio = Dio(BaseOptions(baseUrl: BASE_URL));
   final _storage = const FlutterSecureStorage();
 
-  // Login
-  // Login corregido
+
 Future<String?> login(String username, String password) async {
     try {
-      // Usamos FormData que es lo que FastAPI suele procesar bien si no es estricto con el content-type
-      // OJO: Añadimos 'grant_type': 'password' que era lo que faltaba en tu primer error.
+
       final formData = FormData.fromMap({
         'username': username,
         'password': password,
-        'grant_type': 'password', // <--- ESTO ES LA CLAVE
+        'grant_type': 'password', 
       });
 
       final response = await _dio.post(
         '/token',
         data: formData,
         options: Options(
-          // Esto ayuda a que Dio no lance excepción si la API devuelve 401 (no autorizado)
+          
           validateStatus: (status) => status! < 500,
         ),
       );
@@ -86,19 +81,19 @@ Future<String?> login(String username, String password) async {
       if (response.statusCode == 200) {
         final token = response.data['access_token'];
         await _storage.write(key: 'jwt_token', value: token);
-        return null; // Login exitoso
+        return null; 
       } else {
-        // Si hay error, intentamos leer el mensaje 'detail'
+       
         final msg = response.data['detail'];
         if (msg is List) {
-            // A veces FastAPI devuelve una lista de errores
+            
             return "Error: ${msg[0]['msg']}"; 
         }
         return "Error: $msg";
       }
 
     } catch (e) {
-      // IMPORTANTE: Mira la consola de "Run" en Flutter para ver qué dice aquí
+      
       print("ERROR EXCEPCIÓN: $e");
       if (e is DioException) {
         print("Mensaje Dio: ${e.message}");
@@ -108,7 +103,7 @@ Future<String?> login(String username, String password) async {
     }
   }
 
-  // Obtener Paquetes
+
   Future<List<dynamic>> getPackages() async {
     String? token = await _storage.read(key: 'jwt_token');
     _dio.options.headers['Authorization'] = 'Bearer $token';
@@ -121,7 +116,7 @@ Future<String?> login(String username, String password) async {
     }
   }
 
-  // Confirmar Entrega
+
   Future<void> confirmDelivery(int packageId, File photo, double lat, double lng) async {
     String? token = await _storage.read(key: 'jwt_token');
     _dio.options.headers['Authorization'] = 'Bearer $token';
@@ -142,7 +137,7 @@ Future<String?> login(String username, String password) async {
   }
 }
 
-// --- PANTALLA 1: LOGIN ---
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -183,7 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo Simulado
+              
               Icon(Icons.local_shipping, size: 80, color: AppColors.primary),
               const SizedBox(height: 10),
               const Text("PAQUEXPRESS", 
@@ -191,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Text("App Agentes", style: TextStyle(color: Colors.grey)),
               const SizedBox(height: 40),
               
-              // Formulario
+             
               TextField(
                 controller: _userController,
                 decoration: const InputDecoration(
@@ -230,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// --- PANTALLA 2: LISTA DE ENTREGAS ---
+
 class DeliveryListScreen extends StatefulWidget {
   const DeliveryListScreen({super.key});
 
@@ -303,7 +298,7 @@ class _DeliveryListScreenState extends State<DeliveryListScreen> {
                   subtitle: Text(pkg['destination_address'], maxLines: 2, overflow: TextOverflow.ellipsis),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () async {
-                    // Navegar al detalle y esperar retorno para recargar lista si se entregó
+                   
                     final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -322,7 +317,7 @@ class _DeliveryListScreenState extends State<DeliveryListScreen> {
   }
 }
 
-// --- PANTALLA 3: DETALLE, MAPA Y CONFIRMACIÓN ---
+
 class PackageDetailScreen extends StatefulWidget {
   final dynamic package;
   const PackageDetailScreen({super.key, required this.package});
@@ -337,7 +332,7 @@ class _PackageDetailScreenState extends State<PackageDetailScreen> {
   File? _imageFile;
   bool _isSubmitting = false;
 
-  // Mapa
+  
   final MapController _mapController = MapController();
 
   Future<void> _takePhoto() async {
@@ -358,10 +353,10 @@ class _PackageDetailScreenState extends State<PackageDetailScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      // 1. Obtener ubicación actual del agente
+    
       Position position = await _determinePosition();
       
-      // 2. Enviar a backend
+     
       await _api.confirmDelivery(
         widget.package['id'],
         _imageFile!,
@@ -372,7 +367,7 @@ class _PackageDetailScreenState extends State<PackageDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("¡Entrega registrada con éxito!"), backgroundColor: Colors.green));
-        Navigator.pop(context, true); // Regresar true para actualizar lista
+        Navigator.pop(context, true); 
       }
     } catch (e) {
       if (mounted) {
@@ -383,7 +378,7 @@ class _PackageDetailScreenState extends State<PackageDetailScreen> {
     }
   }
 
-  // Permisos y obtención de GPS
+
   Future<Position> _determinePosition() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -402,7 +397,7 @@ class _PackageDetailScreenState extends State<PackageDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Coordenadas del destino (del paquete)
+  
     final destLat = widget.package['dest_lat'] ?? 0.0;
     final destLng = widget.package['dest_lng'] ?? 0.0;
 
@@ -410,7 +405,7 @@ class _PackageDetailScreenState extends State<PackageDetailScreen> {
       appBar: AppBar(title: const Text("Detalle de Entrega")),
       body: Column(
         children: [
-          // SECCIÓN 1: MAPA (Mitad superior)
+          
           Expanded(
             flex: 4,
             child: FlutterMap(
@@ -438,7 +433,7 @@ class _PackageDetailScreenState extends State<PackageDetailScreen> {
             ),
           ),
 
-          // SECCIÓN 2: INFO Y ACCIONES (Mitad inferior)
+
           Expanded(
             flex: 5,
             child: Container(
@@ -462,7 +457,7 @@ class _PackageDetailScreenState extends State<PackageDetailScreen> {
                   ),
                   const Divider(height: 30),
 
-                  // Área de Foto
+                  
                   const Text("Evidencia de Entrega", style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
                   
@@ -500,14 +495,14 @@ class _PackageDetailScreenState extends State<PackageDetailScreen> {
 
                   const Spacer(),
 
-                  // Botón Final
+                  
                   SizedBox(
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
                       onPressed: _isSubmitting ? null : _confirmDelivery,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.secondary, // Naranja
+                        backgroundColor: AppColors.secondary, 
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                       child: _isSubmitting
